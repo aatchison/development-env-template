@@ -7,6 +7,10 @@ OUT=".devcontainer/overlays"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --output-dir)
+      if [[ $# -lt 2 ]]; then
+        echo "--output-dir requires a value" >&2
+        exit 2
+      fi
       OUT="$2"
       shift 2
       ;;
@@ -30,6 +34,7 @@ fi
 
 for delta in "${deltas[@]}"; do
   name="$(basename "$delta" .delta.json)"
-  jq -S -s '.[0] * .[1]' "$BASE" "$delta" > "$OUT/$name.json"
+  jq -S -s '.[0] * .[1]' "$BASE" "$delta" > "$OUT/$name.json.tmp"
+  mv "$OUT/$name.json.tmp" "$OUT/$name.json"
   echo "wrote $OUT/$name.json"
 done
