@@ -5,8 +5,8 @@
 #
 # Exits 0 on success, non-zero on any failed check.
 #
-# When you add a new overlay, add its case below. Unknown names fall through to
-# the baseline check so the build is at least smoke-tested.
+# When you add a new overlay, add its case below. Unknown names exit 1 so CI
+# fails loudly rather than silently downgrading to baseline-only verification.
 set -euo pipefail
 
 name="${1:-baseline}"
@@ -91,8 +91,8 @@ case "$name" in
     devpod version
     ;;
   *)
-    echo "unknown overlay '$name' — running baseline check only" >&2
-    baseline_check
+    echo "error: unknown overlay '$name' — add a case in scripts/verify-overlay.sh" >&2
+    exit 1
     ;;
 esac
 

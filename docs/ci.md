@@ -101,7 +101,7 @@ devcontainer exec --workspace-folder . \
 Two files:
 
 1. Drop your `<name>.delta.json` into `.devcontainer/overlays/` and run `./scripts/build-overlays.sh`. The `discover` job picks it up automatically.
-2. Add a `case` for `<name>` in `scripts/verify-overlay.sh` that runs the tool's version check. If you skip this step, CI will still build the overlay and run the baseline check (unknown overlays fall through), so adding an incomplete CI lane is safe — but the overlay-specific tool won't be verified until you add the case.
+2. Add a `case` for `<name>` in `scripts/verify-overlay.sh` that runs the tool's version check. If you skip this step, CI fails the new lane with `unknown overlay '<name>'` — there is no silent fallback.
 
 No workflow edit needed.
 
