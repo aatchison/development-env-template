@@ -30,9 +30,9 @@ Overlays add capabilities the baseline can't ship by default:
 - **`.devcontainer/overlays/with-claude-mount.json`** — bind-mounts `~/.claude` into the container so your local Claude credentials carry in. **Local Docker / devpod-Docker only** — Codespaces and devpod-Kubernetes can't see the host filesystem.
 - **`.devcontainer/overlays/with-docker-in-docker.json`** — adds the docker-in-docker feature. Requires a privileged container. Works on local Docker; may be refused on devpod-Kubernetes (cluster-dependent); not supported in Codespaces.
 
-Launch with an overlay:
+Launch with an overlay (use `--override-config`, not `--config` — the CLI rejects filenames other than `devcontainer.json` for `--config`):
 ```bash
-devcontainer up --workspace-folder . --config .devcontainer/overlays/with-claude-mount.json
+devcontainer up --workspace-folder . --override-config .devcontainer/overlays/with-claude-mount.json
 ```
 
 Overlays are generated from `*.delta.json` files by `scripts/build-overlays.sh`. Edit the baseline or a delta, then re-run the script — never hand-edit the generated overlay files. CI fails on drift.
