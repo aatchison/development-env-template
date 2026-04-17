@@ -51,6 +51,15 @@ Overlays are generated from `*.delta.json` files by `scripts/build-overlays.sh`.
 
 No automated sync. When the template changes, pull relevant files (baseline, overlays, CI, slash commands) into downstream projects manually.
 
+## Full documentation
+
+See [`docs/`](docs/README.md):
+
+- [Launchers](docs/launchers.md) — VS Code, Codespaces, devpod (Docker/Kubernetes), SSH, and `ANTHROPIC_API_KEY` forwarding.
+- [Overlays](docs/overlays.md) — using existing overlays, the `--override-config` vs `--config` trap, and how to author new overlays.
+- [Slash commands](docs/slash-commands.md) — full reference for `/bootstrap`, `/add-language`, `/verify-env`, `/rebuild-devcontainer`.
+- [CI](docs/ci.md) — what the workflow does, reading failures, extending it.
+
 ## Environment matrix
 
 | Environment              | Baseline | with-claude-mount | with-docker-in-docker |
