@@ -25,9 +25,18 @@ case "$name" in
     ;;
   with-claude-mount)
     baseline_check
-    # The mount is a launcher concern; in CI we can only confirm the target
-    # path exists (the feature doesn't create it — the bind mount does).
-    test -d /home/vscode/.claude || echo "warning: ~/.claude not mounted (expected in CI)"
+    # The mount is a launcher concern — the overlay configures the bind but
+    # only the host launcher can create the source. CI doesn't have a host
+    # ~/.claude, so we allow a missing mount when $CI is set. Locally, a
+    # missing mount means the overlay didn't actually do its job, so fail.
+    if test -d /home/vscode/.claude; then
+      :
+    elif [ -n "${CI:-}" ]; then
+      echo "warning: ~/.claude not mounted (expected in CI)"
+    else
+      echo "error: ~/.claude not mounted — overlay's bind mount didn't materialize" >&2
+      exit 1
+    fi
     ;;
   with-docker-in-docker)
     baseline_check
@@ -69,10 +78,11 @@ case "$name" in
   with-archon)
     baseline_check
     # archon's installer may place the binary in ~/.archon/bin or similar.
+    # Only accept a working --version call — a binary that exists on $PATH
+    # but crashes (missing libs, broken install) shouldn't pass verification.
     archon --version 2>/dev/null \
       || "$HOME/.archon/bin/archon" --version 2>/dev/null \
-      || command -v archon >/dev/null \
-      || { echo "archon not found"; exit 1; }
+      || { echo "archon not found or not runnable"; exit 1; }
     ;;
   with-pulumi)
     baseline_check
