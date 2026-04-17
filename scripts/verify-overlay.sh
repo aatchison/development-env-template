@@ -44,16 +44,16 @@ case "$name" in
     ;;
   with-argocd)
     baseline_check
-    argocd version --client 2>&1 | head -3
+    argocd version --client 2>&1 | sed -n '1,3p'
     ;;
   with-teleport)
     baseline_check
-    tsh version 2>&1 | head -3
+    tsh version 2>&1 | sed -n '1,3p'
     ;;
   with-neovim)
     baseline_check
-    nvim --version | head -1
-    stow --version | head -1
+    nvim --version | sed -n '1p'
+    stow --version | sed -n '1p'
     ;;
   with-opencode)
     baseline_check

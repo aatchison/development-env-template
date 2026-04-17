@@ -33,7 +33,16 @@ jobs:
                 # *.json glob matches *.delta.json too — skip those (they
                 # are merge inputs, not generated overlays).
                 case "$f" in *.delta.json) continue ;; esac
-                basename "$f" .json
+                name="$(basename "$f" .json)"
+                # Reject anything that isn't a safe shell identifier.
+                # matrix.overlay is interpolated into `runCmd` and GITHUB_OUTPUT
+                # values — names with spaces, quotes, or metacharacters could
+                # inject shell.
+                if [[ ! "$name" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+                  echo "error: overlay name '$name' contains unsafe characters. Allowed: lowercase letters, digits, hyphens; must start alphanumeric." >&2
+                  exit 1
+                fi
+                printf '%s\n' "$name"
               done
             } | jq -R . | jq -c -s .
           )

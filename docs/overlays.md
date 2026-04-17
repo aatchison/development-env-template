@@ -218,7 +218,7 @@ Example — if baseline has:
 
 4. Add a `case` for your overlay name in `scripts/verify-overlay.sh` that runs a lightweight `--version`-style check. This is what CI will run inside the built container. Unknown overlays fall through to the baseline check, so omitting this step leaves CI only smoke-testing the build — the new tool won't be verified.
 
-5. Update the README's environment matrix and `docs/overlays.md` if the overlay has launcher-specific support (e.g. requires privileged or a host bind mount).
+5. Update the README's environment matrix and `docs/overlays.md` if the overlay has launcher-specific support (e.g. requires a privileged container or a host bind mount).
 
 ## Why not just layer overlays at runtime?
 
