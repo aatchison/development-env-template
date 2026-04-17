@@ -58,18 +58,21 @@ jobs:
         overlay: ${{ fromJSON(needs.discover.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Pick config file
-        id: cfg
-        run: |
-          if [ "${{ matrix.overlay }}" = "baseline" ]; then
-            echo "file=.devcontainer/devcontainer.json" >> "$GITHUB_OUTPUT"
-          else
-            echo "file=.devcontainer/overlays/${{ matrix.overlay }}.json" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Stage overlay as devcontainer.json
+        # devcontainers/ci invokes `devcontainer up --config`, which only
+        # accepts filenames literally named `devcontainer.json` /
+        # `.devcontainer.json`. Overwriting the baseline in place lets the
+        # action work with any overlay without the CLI rejecting the name.
+        # The drift-check job runs on a separate runner, so this local
+        # overwrite doesn't affect it. matrix.overlay is validated against
+        # ^[a-z0-9][a-z0-9-]*$ in the discover job, so it's safe to
+        # interpolate here.
+        if: matrix.overlay != 'baseline'
+        run: cp ".devcontainer/overlays/${{ matrix.overlay }}.json" .devcontainer/devcontainer.json
       - name: Build devcontainer and verify tools
         uses: devcontainers/ci@v0.3
         with:
-          configFile: ${{ steps.cfg.outputs.file }}
+          configFile: .devcontainer/devcontainer.json
           imageName: ghcr.io/${{ github.repository }}/devcontainer-${{ matrix.overlay }}
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer-${{ matrix.overlay }}
           push: never
