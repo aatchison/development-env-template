@@ -6,6 +6,15 @@ An overlay is a full, self-contained `devcontainer.json` sitting next to `*.delt
 
 ## Available overlays
 
+Grouped by purpose:
+
+- **Platform capabilities** (launcher-sensitive): `with-claude-mount`, `with-docker-in-docker`
+- **Language toolchains**: `with-python-ruff`, `with-golang`
+- **Infra / ops CLIs**: `with-argocd`, `with-teleport`, `with-pulumi`, `with-terraform`
+- **Devcontainer tooling**: `with-devcontainer-cli`, `with-devpod`
+- **AI coding tools**: `with-opencode`, `with-codex`, `with-archon`
+- **Editor / dotfiles**: `with-neovim` (neovim + GNU Stow)
+
 ### `with-claude-mount`
 
 Bind-mounts your host's `~/.claude` into the container at `/home/vscode/.claude`. Your local Claude credentials, history, and settings carry in — no re-login needed.
@@ -124,12 +133,15 @@ VS Code users: open the Command Palette → **Dev Containers: Reopen in Containe
 ```
 .devcontainer/
   devcontainer.json                        # baseline
+  Dockerfile                               # extends MS base image; swaps in azure.archive.ubuntu.com + apt retries
   overlays/
     with-claude-mount.delta.json           # INPUT — you edit this
     with-claude-mount.json                 # OUTPUT — generated, do not edit
     with-docker-in-docker.delta.json       # INPUT
     with-docker-in-docker.json             # OUTPUT
 ```
+
+The `Dockerfile` exists because `archive.ubuntu.com` has periodic outages that kill feature installs mid-build. We point apt at `azure.archive.ubuntu.com` (co-hosted with GitHub Actions runners) and set `Acquire::Retries` to absorb short blips. Every overlay inherits this via `build.dockerfile` in the merged config.
 
 Regenerate after editing a delta or the baseline:
 
@@ -190,6 +202,16 @@ Example — if baseline has:
    }
    ```
 
+   Example — adding a CLI tool via `postCreateCommand`:
+   ```json
+   {
+     "postCreateCommand": {
+       "my-tool": "curl -fsSL https://example.com/install | bash"
+     }
+   }
+   ```
+   (Object-form `postCreateCommand` merges cleanly with the baseline's `claude-code` entry.)
+
 2. Regenerate:
    ```bash
    ./scripts/build-overlays.sh
@@ -197,7 +219,9 @@ Example — if baseline has:
 
 3. Verify the generated `<name>.json` looks right. Commit both the delta and the generated file.
 
-4. Update the README's environment matrix and `docs/launchers.md` if the overlay has launcher-specific support.
+4. Add a `case` for your overlay name in `scripts/verify-overlay.sh` that runs a lightweight `--version`-style check. This is what CI will run inside the built container. If you forget, CI fails with `unknown overlay` — there is no silent fallback.
+
+5. Update the README's environment matrix and `docs/overlays.md` if the overlay has launcher-specific support (e.g. requires a privileged container or a host bind mount).
 
 ## Why not just layer overlays at runtime?
 

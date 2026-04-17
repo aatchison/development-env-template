@@ -1,6 +1,6 @@
 # CI
 
-The `.github/workflows/devcontainer.yml` workflow runs on every push to `main` and on every pull request. Two jobs: `drift` then `build`.
+The `.github/workflows/devcontainer.yml` workflow runs on every push to `main` and every pull request. Three jobs: `drift` → `discover` → `build` (matrix).
 
 ## What CI does
 
@@ -14,29 +14,28 @@ Regenerates overlays into a temp directory from the current `devcontainer.json` 
 
 **Why this exists:** overlays are generated files. Without a drift check, the baseline and a committed overlay can drift apart silently — someone edits baseline, forgets to regen, and the overlay ships the old config.
 
-### Job 2: `build` — baseline smoke build
+### Job 2: `discover` — build the matrix
 
-Gated on `drift` passing (`needs: drift`). Uses [`devcontainers/ci@v0.3`](https://github.com/devcontainers/ci) to:
+Lists every overlay in `.devcontainer/overlays/*.json` (plus `baseline`) and emits a JSON matrix for the next job. `*.delta.json` files are skipped — they're merge inputs, not generated overlays — so dropping a new `<name>.delta.json` alone does not light up a CI lane. Run `./scripts/build-overlays.sh` to generate the `<name>.json` overlay from it; that's what the matrix discovers.
 
-1. Build the baseline devcontainer image.
-2. Cache layers into `ghcr.io/<owner>/<repo>/devcontainer` (pulled on subsequent runs for speed).
-3. Skip pushing the image (`push: never`) — CI only verifies the build works, not publishes.
-4. Run these smoke checks inside the built container:
+### Job 3: `build` — matrix per overlay
 
-   ```bash
-   claude --version
-   gh --version
-   git --version
-   node --version
-   ```
+Gated on `discover`. One job per overlay (plus one for baseline). Each job:
 
-If any of those binaries is missing or broken, CI fails with the specific command's stderr.
+1. Picks the right config file (baseline → `.devcontainer/devcontainer.json`; overlay → `.devcontainer/overlays/<name>.json`).
+2. Uses [`devcontainers/ci@v0.3`](https://github.com/devcontainers/ci) to build the container.
+3. Caches layers per-overlay into `ghcr.io/<owner>/<repo>/devcontainer-<overlay>` (pulled on subsequent runs — fresh builds are slow, cached builds are fast).
+4. Runs `./scripts/verify-overlay.sh <overlay>` **inside** the built container. That script does:
+   - Always: `claude --version && gh --version && git --version && node --version` (regression-guards the baseline tools).
+   - Plus the overlay-specific check (e.g. `terraform --version` for `with-terraform`).
+
+`fail-fast: false` so one broken overlay doesn't mask failures in others. `push: never` — CI verifies, doesn't publish.
 
 ## What CI does **not** do
 
-- **Does not build overlays.** Only the baseline is smoke-tested. Overlays are config-only changes; the drift check confirms they match.
-- **Does not publish images.** `push: never` is intentional — this is a template, not a source of pre-built images.
-- **Does not run your project's tests.** The template ships with a pristine container environment. Add a separate workflow for project tests once you have them.
+- **Does not publish images.** `push: never` is intentional.
+- **Does not run your project's tests.** Add a separate workflow for project tests once you have them.
+- **Does not run interactive login flows.** `claude` is only version-checked, not auth-checked.
 
 ## Reading a failure
 
@@ -56,77 +55,76 @@ git commit -m "chore: regenerate overlays"
 git push
 ```
 
-The diff shown in the failing job output tells you exactly which fields drifted.
+The diff shown in the failing job output tells you which fields drifted.
 
-### Build job failed at "Build devcontainer"
+### A specific overlay build failed
 
-Image build itself broke. Common causes:
-- A feature pinned to a version that no longer resolves.
-- A network hiccup pulling the base image or a feature layer. **Re-run the job first** — infra flakes aren't rare.
-- A syntax error in `devcontainer.json`. Validate locally: `jq -e . .devcontainer/devcontainer.json`.
+Look at the failed matrix job's name — it's the overlay name. Common causes:
 
-### Build job failed at a smoke command
+- **Feature no longer resolves.** A pinned feature version was yanked or moved. Check the feature's repo.
+- **Network flake.** Feature downloads from GHCR/GitHub/apt. **Re-run the job first.**
+- **`postCreateCommand` step failed.** The verify script runs *after* postCreate, so install failures surface here. Look at the action's "Startup" section for the postCreate log.
+- **`verify-overlay.sh` exit non-zero.** The tool installed but the check command failed. Could be a binary on `$PATH` mismatch (e.g. installers that put things in `~/.opencode/bin`). Extend the case in `scripts/verify-overlay.sh`.
 
-Example: `claude: command not found` at the `claude --version` step.
+### Build succeeded but verify failed
 
-That means `postCreateCommand` (`npm install -g @anthropic-ai/claude-code`) failed during build. Check the logs above the failed step for the npm error. Network issues are common — re-run the job. Persistent failures usually mean either the package moved, or the node feature version changed its npm prefix.
+Example: `terraform: command not found`. The container built, but the tool isn't on `$PATH` for the user `verify-overlay.sh` runs as. Usually fixed by:
+- Using the correct feature version.
+- Or extending `verify-overlay.sh` with an alternate path (e.g. `"$HOME/.local/bin/<tool>"`).
 
-## Running CI checks locally
+## Running the same checks locally
 
-Before pushing, you can run the full drift check:
+Full drift check:
 
 ```bash
 ./scripts/check-overlay-drift.sh
 ```
 
-And a local build (requires the `devcontainer` CLI, installed from npm as `@devcontainers/cli`):
+Build + verify a single overlay locally (requires the `devcontainer` CLI, `npm install -g @devcontainers/cli`):
 
 ```bash
-devcontainer build --workspace-folder .
-devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . claude --version
-```
+# baseline
+devcontainer up --workspace-folder . --remove-existing-container
+devcontainer exec --workspace-folder . ./scripts/verify-overlay.sh baseline
 
-Or for an overlay:
-
-```bash
+# any overlay
 devcontainer up --workspace-folder . \
-  --override-config .devcontainer/overlays/with-docker-in-docker.json
+  --override-config .devcontainer/overlays/with-terraform.json \
+  --remove-existing-container
+devcontainer exec --workspace-folder . \
+  --override-config .devcontainer/overlays/with-terraform.json \
+  ./scripts/verify-overlay.sh with-terraform
 ```
 
-## Extending CI
+## Adding a new overlay to CI
 
-### Add a job that runs inside the built container
+Two files:
 
-Follow the pattern of the existing `build` job — reuse the `devcontainers/ci@v0.3` action with a different `runCmd`:
+1. Drop your `<name>.delta.json` into `.devcontainer/overlays/` and run `./scripts/build-overlays.sh`. The `discover` job picks it up automatically.
+2. Add a `case` for `<name>` in `scripts/verify-overlay.sh` that runs the tool's version check. If you skip this step, CI fails the new lane with `unknown overlay '<name>'` — there is no silent fallback.
+
+No workflow edit needed.
+
+## Extending CI further
+
+### Publish images
+
+Flip `push: never` to `push: always` (plus GHCR login — see the [devcontainers/ci](https://github.com/devcontainers/ci) docs). Only do this if downstream projects actually consume the image; otherwise the template becomes a distribution you now have to maintain.
+
+### Run your project's tests inside the built container
+
+Add a sibling job that reuses the cached image:
 
 ```yaml
-  my-test:
+  project-tests:
     runs-on: ubuntu-latest
-    needs: drift
+    needs: build
     steps:
       - uses: actions/checkout@v4
       - uses: devcontainers/ci@v0.3
         with:
-          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          configFile: .devcontainer/devcontainer.json
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer-baseline
           push: never
-          runCmd: |
-            set -eux
-            # your commands here
+          runCmd: <your test command>
 ```
-
-### Test an overlay in CI
-
-Add a matrix to `build`, or a sibling job. The devcontainer CI action accepts `configFile`:
-
-```yaml
-      - uses: devcontainers/ci@v0.3
-        with:
-          configFile: .devcontainer/overlays/with-docker-in-docker.json
-          push: never
-          runCmd: docker --version
-```
-
-### Publish the baseline image
-
-Flip `push: never` to `push: always` (plus GHCR login — see the [devcontainers/ci](https://github.com/devcontainers/ci) docs). Only do this if downstream projects actually consume the image; otherwise the template becomes a distribution you now have to maintain.

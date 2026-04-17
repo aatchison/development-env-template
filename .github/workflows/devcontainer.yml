@@ -13,21 +13,75 @@ jobs:
       - name: Check overlay drift
         run: ./scripts/check-overlay-drift.sh
 
-  build:
-    name: build baseline
+  discover:
+    name: discover overlays
     runs-on: ubuntu-latest
     needs: drift
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build devcontainer and run smoke checks
+      - id: set
+        name: Build matrix from overlays/ + baseline
+        run: |
+          set -euo pipefail
+          items=$(
+            {
+              printf '%s\n' baseline
+              for f in .devcontainer/overlays/*.json; do
+                [ -f "$f" ] || continue
+                # *.json glob matches *.delta.json too — skip those (they
+                # are merge inputs, not generated overlays).
+                case "$f" in *.delta.json) continue ;; esac
+                name="$(basename "$f" .json)"
+                # Reject anything that isn't a safe shell identifier.
+                # matrix.overlay is interpolated into `runCmd` and GITHUB_OUTPUT
+                # values — names with spaces, quotes, or metacharacters could
+                # inject shell.
+                if [[ ! "$name" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+                  echo "error: overlay name '$name' contains unsafe characters. Allowed: lowercase letters, digits, hyphens; must start alphanumeric." >&2
+                  exit 1
+                fi
+                printf '%s\n' "$name"
+              done
+            } | jq -R . | jq -c -s .
+          )
+          echo "matrix=$items" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.overlay }}
+    runs-on: ubuntu-latest
+    needs: discover
+    strategy:
+      fail-fast: false
+      matrix:
+        overlay: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create ~/.claude for bind mount
+        # The with-claude-mount overlay bind-mounts ${localEnv:HOME}/.claude
+        # into the container. Docker refuses to bind-mount a non-existent
+        # source, and CI runners don't have a host ~/.claude. Creating an
+        # empty directory lets the mount succeed; verify-overlay still
+        # checks that the mount materialized inside the container.
+        if: matrix.overlay == 'with-claude-mount'
+        run: mkdir -p "$HOME/.claude"
+      - name: Stage overlay as devcontainer.json
+        # devcontainers/ci invokes `devcontainer up --config`, which only
+        # accepts filenames literally named `devcontainer.json` /
+        # `.devcontainer.json`. Overwriting the baseline in place lets the
+        # action work with any overlay without the CLI rejecting the name.
+        # The drift-check job runs on a separate runner, so this local
+        # overwrite doesn't affect it. matrix.overlay is validated against
+        # ^[a-z0-9][a-z0-9-]*$ in the discover job, so it's safe to
+        # interpolate here.
+        if: matrix.overlay != 'baseline'
+        run: cp ".devcontainer/overlays/${{ matrix.overlay }}.json" .devcontainer/devcontainer.json
+      - name: Build devcontainer and verify tools
         uses: devcontainers/ci@v0.3
         with:
-          imageName: ghcr.io/${{ github.repository }}/devcontainer
-          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          configFile: .devcontainer/devcontainer.json
+          imageName: ghcr.io/${{ github.repository }}/devcontainer-${{ matrix.overlay }}
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer-${{ matrix.overlay }}
           push: never
-          runCmd: |
-            set -eux
-            claude --version
-            gh --version
-            git --version
-            node --version
+          runCmd: ./scripts/verify-overlay.sh ${{ matrix.overlay }}
