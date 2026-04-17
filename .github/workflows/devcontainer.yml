@@ -58,6 +58,14 @@ jobs:
         overlay: ${{ fromJSON(needs.discover.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Create ~/.claude for bind mount
+        # The with-claude-mount overlay bind-mounts ${localEnv:HOME}/.claude
+        # into the container. Docker refuses to bind-mount a non-existent
+        # source, and CI runners don't have a host ~/.claude. Creating an
+        # empty directory lets the mount succeed; verify-overlay still
+        # checks that the mount materialized inside the container.
+        if: matrix.overlay == 'with-claude-mount'
+        run: mkdir -p "$HOME/.claude"
       - name: Stage overlay as devcontainer.json
         # devcontainers/ci invokes `devcontainer up --config`, which only
         # accepts filenames literally named `devcontainer.json` /

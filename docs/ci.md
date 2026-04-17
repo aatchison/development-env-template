@@ -16,7 +16,7 @@ Regenerates overlays into a temp directory from the current `devcontainer.json` 
 
 ### Job 2: `discover` — build the matrix
 
-Lists every overlay in `.devcontainer/overlays/*.json` (plus `baseline`) and emits a JSON matrix for the next job. Adding a new overlay automatically lights up a new CI lane — no workflow edit required.
+Lists every overlay in `.devcontainer/overlays/*.json` (plus `baseline`) and emits a JSON matrix for the next job. `*.delta.json` files are skipped — they're merge inputs, not generated overlays — so dropping a new `<name>.delta.json` alone does not light up a CI lane. Run `./scripts/build-overlays.sh` to generate the `<name>.json` overlay from it; that's what the matrix discovers.
 
 ### Job 3: `build` — matrix per overlay
 

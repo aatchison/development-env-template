@@ -78,10 +78,11 @@ case "$name" in
   with-archon)
     baseline_check
     # archon's installer may place the binary in ~/.archon/bin or similar.
-    # Only accept a working --version call — a binary that exists on $PATH
-    # but crashes (missing libs, broken install) shouldn't pass verification.
-    archon --version 2>/dev/null \
-      || "$HOME/.archon/bin/archon" --version 2>/dev/null \
+    # The CLI uses a `version` subcommand, not `--version`. Only accept a
+    # working call — a binary on $PATH that crashes (missing libs, broken
+    # install) shouldn't pass verification.
+    archon version 2>/dev/null \
+      || "$HOME/.archon/bin/archon" version 2>/dev/null \
       || { echo "archon not found or not runnable"; exit 1; }
     ;;
   with-pulumi)
