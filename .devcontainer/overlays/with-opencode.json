@@ -13,7 +13,6 @@
     }
   },
   "features": {
-    "ghcr.io/devcontainers-extra/features/argo-cd:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": false,
       "installZsh": true,
@@ -28,7 +27,8 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "name": "development-env-template",
   "postCreateCommand": {
-    "claude-code": "npm install -g @anthropic-ai/claude-code"
+    "claude-code": "npm install -g @anthropic-ai/claude-code",
+    "opencode": "curl -fsSL https://opencode.ai/install | bash"
   },
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"

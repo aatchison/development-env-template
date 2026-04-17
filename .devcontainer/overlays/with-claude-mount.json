@@ -29,7 +29,9 @@
     "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
   ],
   "name": "development-env-template",
-  "postCreateCommand": "npm install -g @anthropic-ai/claude-code",
+  "postCreateCommand": {
+    "claude-code": "npm install -g @anthropic-ai/claude-code"
+  },
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },

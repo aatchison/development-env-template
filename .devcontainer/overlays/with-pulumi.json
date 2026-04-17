@@ -13,7 +13,7 @@
     }
   },
   "features": {
-    "ghcr.io/devcontainers-extra/features/argo-cd:1": {},
+    "ghcr.io/devcontainers-extra/features/pulumi:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": false,
       "installZsh": true,

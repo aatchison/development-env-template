@@ -27,7 +27,9 @@
   },
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "name": "development-env-template",
-  "postCreateCommand": "npm install -g @anthropic-ai/claude-code",
+  "postCreateCommand": {
+    "claude-code": "npm install -g @anthropic-ai/claude-code"
+  },
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },

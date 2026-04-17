@@ -1,0 +1,5 @@
+{
+  "postCreateCommand": {
+    "archon": "curl -fsSL https://archon.diy/install | bash"
+  }
+}

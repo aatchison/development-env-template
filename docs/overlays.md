@@ -51,6 +51,48 @@ Adds Neovim (`devcontainers-extra/neovim-apt-get:1`) and GNU Stow (`kreemer/feat
 
 **Works on:** all launchers.
 
+### `with-opencode`
+
+Installs [opencode](https://opencode.ai) via its official install script during `postCreateCommand`.
+
+**Works on:** all launchers.
+
+### `with-codex`
+
+Installs the [OpenAI Codex CLI](https://github.com/openai/codex) (`@openai/codex` npm package).
+
+**Works on:** all launchers.
+
+### `with-archon`
+
+Installs [Archon](https://github.com/coleam00/Archon) — an open-source harness builder for AI coding — via its official install script.
+
+**Works on:** all launchers.
+
+### `with-pulumi`
+
+Adds the [Pulumi CLI](https://www.pulumi.com/docs/install/) via `devcontainers-extra/features/pulumi:1`.
+
+**Works on:** all launchers.
+
+### `with-terraform`
+
+Adds [Terraform](https://developer.hashicorp.com/terraform) via the official `devcontainers/features/terraform:1` feature.
+
+**Works on:** all launchers.
+
+### `with-devcontainer-cli`
+
+Installs [`@devcontainers/cli`](https://github.com/devcontainers/cli) so you can build and run devcontainers from within this container (e.g. to test overlays themselves).
+
+**Works on:** all launchers.
+
+### `with-devpod`
+
+Downloads the [devpod](https://devpod.sh) Linux binary into `/usr/local/bin/devpod`. Requires `sudo` in the postCreate step (baseline image provides it).
+
+**Works on:** all launchers.
+
 ## Using an overlay
 
 The devcontainer CLI has two flags that look similar:
@@ -96,6 +138,12 @@ Regenerate after editing a delta or the baseline:
 ```
 
 The generator uses `jq -S -s '.[0] * .[1]'` — deep-merges objects, **replaces arrays**. More on that below.
+
+### `postCreateCommand` uses the object form
+
+The baseline's `postCreateCommand` is an object (a map from name to command string) rather than a single string. This is so overlays can add named install commands without clobbering baseline entries — when two overlays both touch `postCreateCommand`, deep-merge preserves entries from both. It also means the devcontainer spec runs the named commands in parallel, which is fine for independent tool installs.
+
+If an overlay needs to override the `claude-code` install (rare), use the same key name to replace it.
 
 ## Drift check
 

@@ -1,0 +1,5 @@
+{
+  "features": {
+    "ghcr.io/devcontainers-extra/features/pulumi:1": {}
+  }
+}
