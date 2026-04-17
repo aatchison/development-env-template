@@ -29,6 +29,10 @@ Overlays add capabilities the baseline can't ship by default:
 
 - **`.devcontainer/overlays/with-claude-mount.json`** — bind-mounts `~/.claude` into the container so your local Claude credentials carry in. **Local Docker / devpod-Docker only** — Codespaces and devpod-Kubernetes can't see the host filesystem.
 - **`.devcontainer/overlays/with-docker-in-docker.json`** — adds the docker-in-docker feature. Requires a privileged container. Works on local Docker; may be refused on devpod-Kubernetes (cluster-dependent); not supported in Codespaces.
+- **`.devcontainer/overlays/with-python-ruff.json`** — Python + [ruff](https://docs.astral.sh/ruff/). Works on all launchers.
+- **`.devcontainer/overlays/with-golang.json`** — Go toolchain. Works on all launchers.
+- **`.devcontainer/overlays/with-argocd.json`** — Argo CD CLI. Works on all launchers.
+- **`.devcontainer/overlays/with-teleport.json`** — Teleport client (`tsh`, `tctl`) from [aatchison/features](https://github.com/aatchison/features). Works on all launchers.
 
 Launch with an overlay (use `--override-config`, not `--config` — the CLI rejects filenames other than `devcontainer.json` for `--config`):
 ```bash
@@ -62,10 +66,12 @@ See [`docs/`](docs/README.md):
 
 ## Environment matrix
 
-| Environment              | Baseline | with-claude-mount | with-docker-in-docker |
-|--------------------------|:--------:|:-----------------:|:---------------------:|
-| VS Code + Docker Desktop |    ✅    |        ✅         |          ✅           |
-| GitHub Codespaces        |    ✅    |        ❌         |          ❌           |
-| devpod + Docker          |    ✅    |        ✅         |          ✅           |
-| devpod + Kubernetes      |    ✅    |        ❌         |         ⚠️           |
-| Neovim / SSH to container|    ✅    |   if host FS ok   |    depends on runtime |
+Tool overlays (`with-python-ruff`, `with-golang`, `with-argocd`, `with-teleport`) are feature-only — they work on every launcher that supports the baseline.
+
+| Environment              | Baseline | with-claude-mount | with-docker-in-docker | tool overlays |
+|--------------------------|:--------:|:-----------------:|:---------------------:|:-------------:|
+| VS Code + Docker Desktop |    ✅    |        ✅         |          ✅           |       ✅      |
+| GitHub Codespaces        |    ✅    |        ❌         |          ❌           |       ✅      |
+| devpod + Docker          |    ✅    |        ✅         |          ✅           |       ✅      |
+| devpod + Kubernetes      |    ✅    |        ❌         |         ⚠️           |       ✅      |
+| Neovim / SSH to container|    ✅    |   if host FS ok   |    depends on runtime |       ✅      |

@@ -21,6 +21,30 @@ Adds the `docker-in-docker` feature so `docker` commands work inside the contain
 **May work on:** devpod-Kubernetes — depends on cluster PodSecurity/admission policy.
 **Does not work on:** Codespaces.
 
+### `with-python-ruff`
+
+Adds Python (official `python:1` feature) and [ruff](https://docs.astral.sh/ruff/) (community `devcontainers-extra/features/ruff:2`). Good for Python projects that want a fast linter/formatter ready out of the box.
+
+**Works on:** all launchers.
+
+### `with-golang`
+
+Adds the official `go:1` feature. A lighter-weight alternative to running `/add-language go` when you want a Go-capable container without modifying the baseline.
+
+**Works on:** all launchers.
+
+### `with-argocd`
+
+Adds the [Argo CD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) via `devcontainers-extra/features/argo-cd:1`. For working with GitOps pipelines and Argo CD servers.
+
+**Works on:** all launchers.
+
+### `with-teleport`
+
+Adds the Teleport client tools (`tsh`, `tctl`) via `ghcr.io/aatchison/features/teleport:1`. For accessing clusters/nodes gated behind Teleport.
+
+**Works on:** all launchers.
+
 ## Using an overlay
 
 The devcontainer CLI has two flags that look similar:

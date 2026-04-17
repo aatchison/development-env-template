@@ -1,0 +1,5 @@
+{
+  "features": {
+    "ghcr.io/devcontainers-extra/features/argo-cd:1": {}
+  }
+}
