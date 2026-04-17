@@ -33,6 +33,7 @@ Overlays add capabilities the baseline can't ship by default:
 - **`.devcontainer/overlays/with-golang.json`** — Go toolchain. Works on all launchers.
 - **`.devcontainer/overlays/with-argocd.json`** — Argo CD CLI. Works on all launchers.
 - **`.devcontainer/overlays/with-teleport.json`** — Teleport client (`tsh`, `tctl`) from [aatchison/features](https://github.com/aatchison/features). Works on all launchers.
+- **`.devcontainer/overlays/with-neovim.json`** — Neovim + [GNU Stow](https://www.gnu.org/software/stow/) for dotfiles. Works on all launchers.
 
 Launch with an overlay (use `--override-config`, not `--config` — the CLI rejects filenames other than `devcontainer.json` for `--config`):
 ```bash

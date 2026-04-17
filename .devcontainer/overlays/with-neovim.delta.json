@@ -1,0 +1,6 @@
+{
+  "features": {
+    "ghcr.io/devcontainers-extra/features/neovim-apt-get:1": {},
+    "ghcr.io/kreemer/features/stow:1": {}
+  }
+}

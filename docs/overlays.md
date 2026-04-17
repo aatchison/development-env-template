@@ -45,6 +45,12 @@ Adds the Teleport client tools (`tsh`, `tctl`) via `ghcr.io/aatchison/features/t
 
 **Works on:** all launchers.
 
+### `with-neovim`
+
+Adds Neovim (`devcontainers-extra/neovim-apt-get:1`) and GNU Stow (`kreemer/features/stow:1`) for dotfiles management. Pairs naturally with `with-claude-mount` if you want to bring your local editor config in via `stow`.
+
+**Works on:** all launchers.
+
 ## Using an overlay
 
 The devcontainer CLI has two flags that look similar:
