@@ -3,6 +3,12 @@
 # Exits non-zero if any overlay differs (indicating drift).
 set -euo pipefail
 
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "error: not inside a git repo" >&2
+  exit 1
+}
+cd "$REPO_ROOT"
+
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 

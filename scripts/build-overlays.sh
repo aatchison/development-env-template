@@ -3,6 +3,12 @@
 # Usage: scripts/build-overlays.sh [--output-dir <dir>]
 set -euo pipefail
 
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "error: not inside a git repo" >&2
+  exit 1
+}
+cd "$REPO_ROOT"
+
 OUT=".devcontainer/overlays"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,6 +40,8 @@ fi
 
 for delta in "${deltas[@]}"; do
   name="$(basename "$delta" .delta.json)"
+  # jq `*` deep-merges objects but REPLACES arrays. If baseline and a delta both
+  # define the same array key (e.g. "mounts"), the baseline's entries are dropped.
   jq -S -s '.[0] * .[1]' "$BASE" "$delta" > "$OUT/$name.json.tmp"
   mv "$OUT/$name.json.tmp" "$OUT/$name.json"
   echo "wrote $OUT/$name.json"
