@@ -74,7 +74,7 @@ See [`docs/`](docs/README.md):
 
 ## Environment matrix
 
-Tool overlays (`with-python-ruff`, `with-golang`, `with-argocd`, `with-teleport`) are feature-only — they work on every launcher that supports the baseline.
+Tool overlays (everything except `with-claude-mount` and `with-docker-in-docker`) are feature-only or `postCreateCommand`-only — they work on every launcher that supports the baseline.
 
 | Environment              | Baseline | with-claude-mount | with-docker-in-docker | tool overlays |
 |--------------------------|:--------:|:-----------------:|:---------------------:|:-------------:|
@@ -83,3 +83,5 @@ Tool overlays (`with-python-ruff`, `with-golang`, `with-argocd`, `with-teleport`
 | devpod + Docker          |    ✅    |        ✅         |          ✅           |       ✅      |
 | devpod + Kubernetes      |    ✅    |        ❌         |         ⚠️           |       ✅      |
 | Neovim / SSH to container|    ✅    |   if host FS ok   |    depends on runtime |       ✅      |
+
+CI builds and verifies every overlay in a matrix — see [docs/ci.md](docs/ci.md).

@@ -3,9 +3,9 @@
 User guide for this devcontainer template. Start with the launcher that matches your environment, then branch into overlays or slash commands as needed.
 
 - [Launchers](launchers.md) — run the container in VS Code, Codespaces, devpod (Docker or Kubernetes), or over SSH. Covers `ANTHROPIC_API_KEY` forwarding.
-- [Overlays](overlays.md) — optional capabilities layered on top of the baseline (`with-claude-mount`, `with-docker-in-docker`). Also: how overlays are generated, the `--override-config` flag, the drift check, and how to add new overlays.
+- [Overlays](overlays.md) — optional capabilities layered on top of the baseline (Claude mount, docker-in-docker, language toolchains, CLI tools). Covers how overlays are generated, the `--override-config` flag, the drift check, and how to add new overlays.
 - [Slash commands](slash-commands.md) — reference for `/bootstrap`, `/add-language`, `/verify-env`, `/rebuild-devcontainer`.
-- [CI](ci.md) — what the `devcontainer` GitHub Actions workflow does, how to read failures, how to extend it.
+- [CI](ci.md) — drift check + per-overlay matrix build. How to read failures, how to add a new overlay to CI, how to extend the workflow.
 
 ## Where things live
 
@@ -21,8 +21,9 @@ User guide for this devcontainer template. Start with the launcher that matches 
 scripts/
   build-overlays.sh              # regenerate overlays from deltas
   check-overlay-drift.sh         # CI drift guard
+  verify-overlay.sh              # in-container tool check (CI + local)
 .github/workflows/
-  devcontainer.yml               # drift check + smoke build
+  devcontainer.yml               # drift check + per-overlay matrix build
 ```
 
 ## Design spec
