@@ -30,6 +30,9 @@ jobs:
               printf '%s\n' baseline
               for f in .devcontainer/overlays/*.json; do
                 [ -f "$f" ] || continue
+                # *.json glob matches *.delta.json too — skip those (they
+                # are merge inputs, not generated overlays).
+                case "$f" in *.delta.json) continue ;; esac
                 basename "$f" .json
               done
             } | jq -R . | jq -c -s .
