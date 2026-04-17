@@ -1,4 +1,7 @@
 {
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -25,7 +28,6 @@
     },
     "ghcr.io/devcontainers/features/terraform:1": {}
   },
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "name": "development-env-template",
   "postCreateCommand": {
     "claude-code": "npm install -g @anthropic-ai/claude-code"

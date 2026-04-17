@@ -133,12 +133,15 @@ VS Code users: open the Command Palette → **Dev Containers: Reopen in Containe
 ```
 .devcontainer/
   devcontainer.json                        # baseline
+  Dockerfile                               # extends MS base image; swaps in azure.archive.ubuntu.com + apt retries
   overlays/
     with-claude-mount.delta.json           # INPUT — you edit this
     with-claude-mount.json                 # OUTPUT — generated, do not edit
     with-docker-in-docker.delta.json       # INPUT
     with-docker-in-docker.json             # OUTPUT
 ```
+
+The `Dockerfile` exists because `archive.ubuntu.com` has periodic outages that kill feature installs mid-build. We point apt at `azure.archive.ubuntu.com` (co-hosted with GitHub Actions runners) and set `Acquire::Retries` to absorb short blips. Every overlay inherits this via `build.dockerfile` in the merged config.
 
 Regenerate after editing a delta or the baseline:
 
