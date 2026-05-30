@@ -29,11 +29,15 @@ Gated on `discover`. One job per overlay (plus one for baseline). Each job:
    - Always: `claude --version && gh --version && git --version && node --version` (regression-guards the baseline tools).
    - Plus the overlay-specific check (e.g. `terraform --version` for `with-terraform`).
 
-`fail-fast: false` so one broken overlay doesn't mask failures in others. `push: never` — CI verifies, doesn't publish.
+`fail-fast: false` so one broken overlay doesn't mask failures in others.
+
+5. **On push to `main` only**, logs in to GHCR and publishes the built image to `ghcr.io/<owner>/<repo>/devcontainer-<overlay>`, tagged with both the commit SHA (immutable) and `latest` (stable pointer). Pull requests and forks build and verify exactly the same way but **do not push** — `push` resolves to `never` for any event that isn't a push to `main`, and the GHCR login step is skipped, so a fork's read-only token is never asked to write packages.
+
+The baseline image (`devcontainer-baseline`) is the one downstream devpods reference as their base; every overlay is published the same way under its own `devcontainer-<overlay>` name.
 
 ## What CI does **not** do
 
-- **Does not publish images.** `push: never` is intentional.
+- **Does not publish from pull requests or forks.** Publishing happens only on push to `main`; PR builds stay verify-only.
 - **Does not run your project's tests.** Add a separate workflow for project tests once you have them.
 - **Does not run interactive login flows.** `claude` is only version-checked, not auth-checked.
 
@@ -107,9 +111,15 @@ No workflow edit needed.
 
 ## Extending CI further
 
-### Publish images
+### Consuming a published image
 
-Flip `push: never` to `push: always` (plus GHCR login — see the [devcontainers/ci](https://github.com/devcontainers/ci) docs). Only do this if downstream projects actually consume the image; otherwise the template becomes a distribution you now have to maintain.
+Images are published on push to `main` (see Job 3 above). Reference one as a base by digest or by the `latest`/SHA tag, e.g. in a downstream `devcontainer.json`:
+
+```jsonc
+{ "image": "ghcr.io/<owner>/<repo>/devcontainer-baseline:latest" }
+```
+
+Pin to a `:<sha>` tag for reproducibility; `:latest` always tracks the newest push to `main`.
 
 ### Run your project's tests inside the built container
 
